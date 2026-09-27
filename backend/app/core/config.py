@@ -1,19 +1,33 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+
+from dotenv import load_dotenv
 
 
-class Settings(BaseSettings):
-    app_name: str = "CGI Complaint Processing API"
-    debug: bool = False
+load_dotenv()
 
-    llm_provider: str = "gemini"
-    llm_model: str = "gemini-2.5-flash"
 
-    gemini_api_key: str = ""
+class Settings:
+    app_name: str = os.getenv(
+        "APP_NAME",
+        "Northwind Resolve API",
+    )
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
+    debug: bool = os.getenv(
+        "DEBUG",
+        "true",
+    ).lower() == "true"
+
+    llm_provider: str = os.getenv(
+        "LLM_PROVIDER",
+        "gemini",
+    )
+
+    llm_model: str = os.getenv(
+        "LLM_MODEL",
+        os.getenv(
+            "GEMINI_MODEL",
+            "gemini/gemini-3.8-flash",
+        ),
     )
 
 

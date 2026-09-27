@@ -1,12 +1,14 @@
-# Virtual environment
-.venv/
-
-# Environment variables
-.env
-
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+
+# Environment variables
+.env
 
 # IDE
 .vscode/
@@ -14,5 +16,6 @@ __pycache__/
 # Testing
 .pytest_cache/
 
-# Logs
-*.log
+# OS
+.DS_Store
+Thumbs.db

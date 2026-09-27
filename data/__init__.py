@@ -1,0 +1,3 @@
+"""
+Northwind Resolve data layer.
+"""

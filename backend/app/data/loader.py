@@ -4,22 +4,26 @@ import pandas as pd
 
 
 # Project root:
-# HTH/
+#
+# NorthWind-Resolve-HackTheHill/
 # ├── backend/
 # │   └── app/
 # │       └── data/
 # │           └── loader.py
+# └── data/
+#     └── raw/
+#
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
-DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR = PROJECT_ROOT / "data" / "raw"
 
 
 def load_csv(filename: str) -> pd.DataFrame:
     """
-    Load a CSV file from the project's data directory.
+    Load a Northwind CSV file from the local data directory.
 
     This function only handles data access.
-    It does not perform analytics or business logic.
+    Analytics and business logic remain in the data layer.
     """
 
     file_path = DATA_DIR / filename
@@ -34,7 +38,7 @@ def load_csv(filename: str) -> pd.DataFrame:
 
 def data_file_exists(filename: str) -> bool:
     """
-    Check whether a data file exists.
+    Check whether a Northwind data file exists.
     """
 
     return (DATA_DIR / filename).exists()
