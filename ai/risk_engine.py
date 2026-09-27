@@ -10,4 +10,7 @@ def calculate_sla_risk(
         + 0.2 * transfer_risk
     )
 
-    return round(min(max(risk, 0.0), 1.0), 2)
+    return round(
+        min(max(risk, 0.0), 1.0),
+        2,
+    )

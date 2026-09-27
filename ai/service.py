@@ -8,13 +8,11 @@ def analyze_complaint(
 ):
     context = context or {}
 
-    # Step 1: AI analysis
     result = classify_complaint(
-        complaint_text,
-        context,
+        complaint_text=complaint_text,
+        context=context,
     )
 
-    # Step 2: Get deterministic risk inputs
     historical_breach = context.get(
         "historical_breach_rate",
         0.0,
@@ -30,7 +28,6 @@ def analyze_complaint(
         0.0,
     )
 
-    # Step 3: Calculate SLA risk using the deterministic engine
     result.sla_risk = calculate_sla_risk(
         historical_breach_rate=historical_breach,
         complaint_age_days=complaint_age,

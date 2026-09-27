@@ -1,3 +1,4 @@
+from ai.mock_context import get_mock_context
 from ai.service import analyze_complaint
 
 
@@ -8,18 +9,19 @@ I want someone to review and correct my bill.
 """
 
 
-context = {
-    "region": "Barrowdale",
-    "historical_breach_rate": 0.816,
-    "complaint_age_days": 12,
-    "transfer_risk": 0.7,
-}
+context = get_mock_context()
 
 
 result = analyze_complaint(
-    complaint,
-    context,
+    complaint_text=complaint,
+    context=context,
 )
 
 
-print(result.model_dump_json(indent=2))
+print("\n=== AI ANALYSIS ===\n")
+
+print(
+    result.model_dump_json(
+        indent=2
+    )
+)

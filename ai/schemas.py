@@ -38,9 +38,7 @@ class ComplaintInput(BaseModel):
 
 class AIAnalysis(BaseModel):
     category: Category
-
     priority: Priority
-
     severity: Severity
 
     sla_risk: float = Field(
