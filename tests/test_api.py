@@ -60,3 +60,84 @@ def test_analytics_monthly():
     data = response.json()
 
     assert len(data) == 24
+
+
+def test_complaints_list():
+
+    response = client.get(
+        "/api/complaints"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "total" in data
+
+    assert "items" in data
+
+    assert data["total"] > 0
+
+    assert len(data["items"]) > 0
+
+
+def test_complaints_list_pagination():
+
+    response = client.get(
+        "/api/complaints?limit=5&offset=0"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["limit"] == 5
+
+    assert data["offset"] == 0
+
+    assert data["count"] == 5
+
+
+def test_complaint_detail():
+
+    response = client.get(
+        "/api/complaints/NW-100001"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["complaint_id"] == "NW-100001"
+
+    assert data["region"] == "Ashford"
+
+
+def test_complaint_not_found():
+
+    response = client.get(
+        "/api/complaints/NW-DOES-NOT-EXIST"
+    )
+
+    assert response.status_code == 404
+
+
+def test_complaint_context():
+
+    response = client.get(
+        "/api/complaints/NW-100001/context"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["region"] == "Ashford"
+
+    assert data["month"] == "2024-10"
+
+    assert "historical_breach_rate" in data
+
+    assert "estimated_read_rate" in data
+
+    assert "smart_meter_penetration" in data
