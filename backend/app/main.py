@@ -2,6 +2,7 @@ from fastapi import FastAPI
 
 from backend.app.api.routes.analytics import (
     router as analytics_router,
+    dashboard_router,
 )
 
 from backend.app.api.routes.complaints import (
@@ -23,6 +24,7 @@ app = FastAPI(
 
 @app.get("/health")
 def health_check():
+
     return {
         "status": "ok",
         "service": settings.app_name,
@@ -37,5 +39,11 @@ app.include_router(
 
 app.include_router(
     analytics_router,
+    prefix="/api",
+)
+
+
+app.include_router(
+    dashboard_router,
     prefix="/api",
 )

@@ -141,3 +141,34 @@ def test_complaint_context():
     assert "estimated_read_rate" in data
 
     assert "smart_meter_penetration" in data
+
+
+def test_dashboard_summary():
+
+    response = client.get(
+        "/api/dashboard/summary"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert "overall" in data
+
+    assert "by_region" in data
+
+    assert "by_category" in data
+
+    assert "by_priority" in data
+
+    assert "by_channel" in data
+
+    assert "monthly" in data
+
+    assert data["overall"]["total_complaints"] > 0
+
+    assert len(data["by_region"]) > 0
+
+    assert len(data["by_category"]) > 0
+
+    assert len(data["monthly"]) == 24
