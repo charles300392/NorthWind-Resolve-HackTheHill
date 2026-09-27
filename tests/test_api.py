@@ -172,3 +172,15 @@ def test_dashboard_summary():
     assert len(data["by_category"]) > 0
 
     assert len(data["monthly"]) == 24
+
+def test_complaints_search():
+    response = client.get(
+        "/api/complaints?search=NW-100001&limit=5"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] >= 1
+    assert any(
+        item["complaint_id"] == "NW-100001"
+        for item in data["items"]
+    )

@@ -87,6 +87,10 @@ def list_complaints(
         default=None,
         description="Filter by complaint status",
     ),
+    search: str | None = Query(
+        default=None,
+        description="Search complaint ID, account ID, region, category, or channel",
+    ),
 ):
     """
     Return a paginated list of Northwind complaints.
@@ -123,6 +127,26 @@ def list_complaints(
             complaints["status"].astype(str).str.lower()
             == status.lower()
         ]
+
+    if search and search.strip():
+        search_value = search.strip().lower()
+        searchable_columns = [
+            "complaint_id",
+            "account_id",
+            "region",
+            "category",
+            "channel",
+            "source_system",
+        ]
+        mask = False
+        for column in searchable_columns:
+            if column in complaints.columns:
+                mask = mask | complaints[column].astype(str).str.lower().str.contains(
+                    search_value,
+                    na=False,
+                    regex=False,
+                )
+        complaints = complaints[mask]
 
     # --------------------------------------------------------
     # Pagination

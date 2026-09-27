@@ -1,11 +1,14 @@
 import {
-  AlertTriangle,
   ArrowLeft,
   Bot,
+  CheckCircle2,
   Clock3,
   FileText,
+  MessageSquare,
   Send,
   ShieldAlert,
+  User,
+  Zap,
 } from "lucide-react"
 
 import {
@@ -18,8 +21,7 @@ import {
   useParams,
 } from "react-router-dom"
 
-import CaseTimeline
-  from "../components/case/CaseTimeline"
+import CaseTimeline from "../components/case/CaseTimeline"
 
 import {
   analyzeComplaint,
@@ -39,352 +41,259 @@ function value(
   record: JsonRecord | undefined,
   key: string,
   fallback = "—",
-) {
+): string {
+  const current = record?.[key]
 
-  const v =
-    record?.[key]
-
-
-  return v === undefined ||
-    v === null ||
-    v === ""
+  return current === undefined ||
+    current === null ||
+    current === ""
     ? fallback
-    : String(v)
+    : String(current)
+}
+
+
+function percent(
+  current: number | undefined,
+): string {
+  return current == null
+    ? "—"
+    : `${(
+        current * 100
+      ).toFixed(1)}%`
 }
 
 
 function ComplaintDetails() {
+  const { id } = useParams()
+  const navigate = useNavigate()
 
-  const {
-    id,
-  } =
-    useParams()
+  const [complaint, setComplaint] =
+    useState<Complaint | null>(null)
 
+  const [context, setContext] =
+    useState<ComplaintContext | null>(null)
 
-  const navigate =
-    useNavigate()
+  const [analysis, setAnalysis] =
+    useState<AIAnalysis | null>(null)
 
-
-  const [
-    complaint,
-    setComplaint,
-  ] =
-    useState<Complaint | null>(
-      null,
-    )
-
-
-  const [
-    context,
-    setContext,
-  ] =
-    useState<ComplaintContext | null>(
-      null,
-    )
-
-
-  const [
-    analysis,
-    setAnalysis,
-  ] =
-    useState<AIAnalysis | null>(
-      null,
-    )
-
-
-  const [
-    complaintText,
-    setComplaintText,
-  ] =
+  const [complaintText, setComplaintText] =
     useState("")
 
-
-  const [
-    loading,
-    setLoading,
-  ] =
+  const [loading, setLoading] =
     useState(true)
 
-
-  const [
-    analyzing,
-    setAnalyzing,
-  ] =
+  const [analyzing, setAnalyzing] =
     useState(false)
 
-
-  const [
-    error,
-    setError,
-  ] =
+  const [error, setError] =
     useState("")
 
-
   useEffect(() => {
-
     if (!id) {
       return
     }
 
-
     setLoading(true)
     setError("")
-
+    setAnalysis(null)
 
     Promise.all([
       getComplaint(id),
       getComplaintContext(id),
     ])
-
       .then(
         ([
           caseData,
           caseContext,
         ]) => {
-
-          setComplaint(
-            caseData,
-          )
-
-          setContext(
-            caseContext,
-          )
-
+          setComplaint(caseData)
+          setContext(caseContext)
         },
       )
-
-      .catch(
-        (err: unknown) => {
-
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Unable to load complaint",
-          )
-
-        },
-      )
-
-      .finally(() => {
-
-        setLoading(false)
-
+      .catch((err: unknown) => {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load complaint",
+        )
       })
-
+      .finally(() => {
+        setLoading(false)
+      })
   }, [id])
 
-
   async function runAI() {
-
-    if (
-      !complaintText.trim()
-    ) {
-
+    if (!complaintText.trim()) {
       setError(
-        "Enter a synthetic/demo complaint before running AI analysis.",
+        "Enter synthetic/demo complaint text before running AI analysis.",
       )
-
       return
     }
-
 
     setAnalyzing(true)
     setError("")
 
-
     try {
-
       /*
        * IMPORTANT:
-       *
-       * Only the user-entered complaint text
+       * Only the user-entered synthetic/demo complaint text
        * is sent to Gemini.
        *
-       * Northwind CSV context is NOT sent.
+       * Northwind CSV context is intentionally NOT sent.
        */
+      const result = await analyzeComplaint({
+        complaint_text:
+          complaintText.trim(),
+      })
 
-      const result =
-        await analyzeComplaint({
-          complaint_text:
-            complaintText.trim(),
-        })
-
-
-      setAnalysis(
-        result,
-      )
-
+      setAnalysis(result)
     } catch (err) {
-
       setError(
         err instanceof Error
           ? err.message
           : "AI analysis failed",
       )
-
     } finally {
-
       setAnalyzing(false)
-
     }
   }
 
-
   if (loading) {
-
     return (
-
-      <div className="p-10 text-center text-sm text-slate-500">
-        Loading complaint...
+      <div className="flex min-h-[500px] items-center justify-center">
+        <p className="text-sm text-slate-500">
+          Loading complaint...
+        </p>
       </div>
-
     )
   }
 
-
   if (!complaint) {
-
     return (
-
       <div className="space-y-4">
-
         <button
-          onClick={() =>
-            navigate(
-              "/complaints",
-            )
-          }
-          className="inline-flex items-center gap-2 text-sm text-slate-600"
+          type="button"
+          onClick={() => navigate("/complaints")}
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
         >
-
           <ArrowLeft className="h-4 w-4" />
-
           Back to complaints
-
         </button>
-
 
         <div className="rounded-xl border bg-white p-10 text-center">
           Complaint not found.
         </div>
-
       </div>
-
     )
   }
-
 
   const history =
     context?.customer_history
 
-
   const staffing =
     context?.staffing
-
 
   const kpis =
     context?.monthly_kpis
 
-
   const sourceSystem =
     context?.source_system_context
 
-
   return (
-
     <div className="space-y-6">
-
+      {/* BACK */}
       <button
         type="button"
-        onClick={() =>
-          navigate(
-            "/complaints",
-          )
-        }
+        onClick={() => navigate("/complaints")}
         className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
       >
-
         <ArrowLeft className="h-4 w-4" />
-
         Back to complaints
-
       </button>
 
-
       {error && (
-
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           {error}
         </div>
-
       )}
 
-
+      {/* CASE HEADER */}
       <div className="rounded-xl border bg-white p-6 shadow-sm">
-
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-
             <div className="flex flex-wrap items-center gap-3">
-
               <h1 className="text-2xl font-bold text-slate-900">
                 {complaint.complaint_id}
               </h1>
 
-
-              <Badge
-                value={
-                  complaint.priority
-                }
+              <PriorityBadge
+                priority={complaint.priority}
               />
 
-
-              <Badge
-                value={
-                  complaint.status
-                }
+              <StatusBadge
+                status={complaint.status}
               />
-
             </div>
 
-
             <p className="mt-2 text-sm text-slate-500">
-              {complaint.category}
-              {" · "}
-              {complaint.region}
-              {" · "}
+              {complaint.category} ·{" "}
+              {complaint.region} ·{" "}
               {complaint.channel}
             </p>
 
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Tag
+                icon={<User className="h-3.5 w-3.5" />}
+                text={complaint.account_id}
+              />
 
-            <p className="mt-3 text-sm text-slate-700">
-              This case is displayed from the local Northwind structured dataset.
-              The CSV does not contain a free-text complaint narrative.
-            </p>
+              <Tag
+                icon={<FileText className="h-3.5 w-3.5" />}
+                text={complaint.source_system}
+              />
 
-          </div>
-
-
-          <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm">
-
-            <span className="text-slate-500">
-              Opened
-            </span>
-
-            <div className="font-semibold text-slate-900">
-              {complaint.date_opened ?? "—"}
+              <Tag
+                icon={<Clock3 className="h-3.5 w-3.5" />}
+                text={`Opened ${
+                  complaint.date_opened ?? "—"
+                }`}
+              />
             </div>
 
+            <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">
+              The Northwind complaint dataset contains structured
+              operational fields rather than a free-text customer
+              narrative. AI analysis therefore uses a separate
+              synthetic/demo complaint text entered by the agent.
+            </p>
           </div>
 
-        </div>
+          <div className="rounded-xl bg-slate-50 p-4 lg:min-w-48">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              SLA
+            </p>
 
+            <p
+              className={`mt-1 text-xl font-bold ${
+                complaint.sla_breach
+                  ? "text-red-700"
+                  : "text-emerald-700"
+              }`}
+            >
+              {complaint.sla_breach
+                ? "Breached"
+                : "Within SLA"}
+            </p>
+
+            <p className="mt-1 text-xs text-slate-500">
+              Target: {complaint.sla_days} days
+            </p>
+          </div>
+        </div>
       </div>
 
-
+      {/* KPI CARDS */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-
         <Metric
           icon={ShieldAlert}
           title="SLA breach"
@@ -393,63 +302,52 @@ function ComplaintDetails() {
               ? "Yes"
               : "No"
           }
-          danger={
-            Boolean(
-              complaint.sla_breach,
-            )
-          }
+          danger={Boolean(complaint.sla_breach)}
         />
-
 
         <Metric
           icon={Clock3}
           title="Days to close"
           value={
-            complaint.days_to_close ===
-            null
+            complaint.days_to_close == null
               ? "Open"
               : `${complaint.days_to_close} d`
           }
         />
 
-
         <Metric
-          icon={AlertTriangle}
+          icon={Zap}
           title="Transfers"
           value={String(
             complaint.transferred_between_systems,
           )}
           danger={
-            complaint.transferred_between_systems >
-            2
+            complaint.transferred_between_systems > 2
           }
         />
-
 
         <Metric
           icon={FileText}
           title="Bill correction"
           value={
-            complaint.bill_correction_value ==
-            null
+            complaint.bill_correction_value == null
               ? "—"
               : `$${complaint.bill_correction_value.toFixed(
                   2,
                 )}`
           }
         />
-
       </div>
 
-
+      {/* CONTEXT */}
       <div className="grid gap-6 xl:grid-cols-2">
-
         <section className="rounded-xl border bg-white p-6 shadow-sm">
-
-          <Section title="Local case context" />
+          <Section
+            title="Local operational context"
+            description="Calculated locally from the Northwind datasets."
+          />
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-
             <Info
               label="Region"
               value={
@@ -459,110 +357,72 @@ function ComplaintDetails() {
             />
 
             <Info
-              label="Month"
+              label="Reporting month"
               value={
                 context?.month ??
-                complaint.date_opened?.slice(
-                  0,
-                  7,
-                ) ??
+                complaint.date_opened?.slice(0, 7) ??
                 "—"
               }
             />
 
             <Info
               label="Historical breach rate"
-              value={
-                context?.historical_breach_rate ==
-                null
-                  ? "—"
-                  : `${(
-                      context.historical_breach_rate *
-                      100
-                    ).toFixed(1)}%`
-              }
+              value={percent(
+                context?.historical_breach_rate,
+              )}
             />
 
             <Info
               label="Estimated read rate"
-              value={
-                context?.estimated_read_rate ==
-                null
-                  ? "—"
-                  : `${(
-                      context.estimated_read_rate *
-                      100
-                    ).toFixed(1)}%`
-              }
+              value={percent(
+                context?.estimated_read_rate,
+              )}
             />
 
             <Info
               label="Smart meter penetration"
-              value={
-                context?.smart_meter_penetration ==
-                null
-                  ? "—"
-                  : `${(
-                      context.smart_meter_penetration *
-                      100
-                    ).toFixed(1)}%`
-              }
+              value={percent(
+                context?.smart_meter_penetration,
+              )}
             />
 
             <Info
               label="Transfer rate"
-              value={
-                context?.transfer_rate ==
-                null
-                  ? "—"
-                  : `${(
-                      context.transfer_rate *
-                      100
-                    ).toFixed(1)}%`
-              }
+              value={percent(
+                context?.transfer_rate,
+              )}
             />
 
             <Info
               label="Reopen rate"
-              value={
-                context?.reopen_rate ==
-                null
-                  ? "—"
-                  : `${(
-                      context.reopen_rate *
-                      100
-                    ).toFixed(1)}%`
-              }
+              value={percent(
+                context?.reopen_rate,
+              )}
             />
 
             <Info
               label="Average close time"
               value={
-                context?.average_days_to_close ==
-                null
+                context?.average_days_to_close == null
                   ? "—"
                   : `${context.average_days_to_close.toFixed(
                       1,
                     )} d`
               }
             />
-
           </div>
-
         </section>
 
-
         <section className="rounded-xl border bg-white p-6 shadow-sm">
-
-          <Section title="Customer / operational history" />
+          <Section
+            title="Customer / operational history"
+            description="Context assembled locally for the case."
+          />
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-
             <Info
               label="Account"
-              value={
-                complaint.account_id
-              }
+              value={complaint.account_id}
             />
 
             <Info
@@ -621,309 +481,215 @@ function ComplaintDetails() {
               )}
             />
 
-          </div>
-
-        </section>
-
-      </div>
-
-
-      <section className="rounded-xl border border-blue-200 bg-white shadow-sm">
-
-        <div className="border-b border-blue-100 bg-blue-50/50 p-6">
-
-          <div className="flex items-start gap-3">
-
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-
-              <Bot className="h-5 w-5 text-blue-700" />
-
-            </div>
-
-
-            <div>
-
-              <h2 className="font-semibold text-slate-900">
-                AI triage
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Analyze synthetic/demo complaint text.
-                Northwind CSV context is not sent to the LLM.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div className="p-6">
-
-          <textarea
-            value={complaintText}
-            onChange={(event) =>
-              setComplaintText(
-                event.target.value,
-              )
-            }
-            placeholder="Example: My electricity bill is much higher than usual and I believe the meter reading is incorrect..."
-            className="min-h-32 w-full rounded-xl border bg-slate-50 p-4 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-100"
-          />
-
-
-          <div className="mt-3 flex justify-end">
-
-            <button
-              type="button"
-              disabled={analyzing}
-              onClick={() =>
-                void runAI()
+            <Info
+              label="Source system"
+              value={
+                complaint.source_system
               }
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-            >
-
-              <Bot className="h-4 w-4" />
-
-              {
-                analyzing
-                  ? "Analyzing..."
-                  : "Run AI analysis"
-              }
-
-            </button>
-
-          </div>
-
-
-          {analysis && (
-
-            <div className="mt-6 grid gap-5 lg:grid-cols-2">
-
-              <div className="rounded-xl border bg-slate-50 p-5">
-
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Classification
-                </p>
-
-
-                <div className="mt-3 space-y-3">
-
-                  <Info
-                    label="Category"
-                    value={
-                      analysis.category
-                    }
-                  />
-
-                  <Info
-                    label="Priority"
-                    value={
-                      analysis.priority
-                    }
-                  />
-
-                  <Info
-                    label="Severity"
-                    value={
-                      analysis.severity
-                    }
-                  />
-
-                  <Info
-                    label="SLA risk"
-                    value={`${Math.round(
-                      analysis.sla_risk *
-                        100,
-                    )}%`}
-                  />
-
-                  <Info
-                    label="Confidence"
-                    value={`${Math.round(
-                      analysis.confidence *
-                        100,
-                    )}%`}
-                  />
-
-                </div>
-
-              </div>
-
-
-              <div className="space-y-4">
-
-                <Info
-                  label="Root cause"
-                  value={
-                    analysis.root_cause ??
-                    "Not identified"
-                  }
-                />
-
-                <Info
-                  label="Recommendation"
-                  value={
-                    analysis.recommendation ??
-                    "No recommendation"
-                  }
-                />
-
-
-                <div className="rounded-xl border p-4">
-
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    Explanation
-                  </p>
-
-
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-
-                    {analysis.explanation.map(
-                      (
-                        item,
-                        index,
-                      ) => (
-
-                        <li
-                          key={index}
-                        >
-                          {item}
-                        </li>
-
-                      ),
-                    )}
-
-                  </ul>
-
-                </div>
-
-              </div>
-
-
-              <div className="lg:col-span-2 rounded-xl border bg-white p-5">
-
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  Generated response
-                </p>
-
-
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                  {
-                    analysis.response ??
-                    "No response generated."
-                  }
-                </p>
-
-
-                <div className="mt-4 flex items-center gap-2 text-xs text-amber-700">
-
-                  <Send className="h-4 w-4" />
-
-                  Human approval required before sending.
-
-                </div>
-
-              </div>
-
-            </div>
-
-          )}
-
-        </div>
-
-      </section>
-
-
-      {sourceSystem && (
-
-        <section className="rounded-xl border bg-white p-6 shadow-sm">
-
-          <Section title="Source system context" />
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-
-            <Info
-              label="System"
-              value={value(
-                sourceSystem,
-                "system_name",
-              )}
             />
 
             <Info
-              label="Vendor"
-              value={value(
-                sourceSystem,
-                "vendor",
-              )}
-            />
-
-            <Info
-              label="Tech stack"
-              value={value(
-                sourceSystem,
-                "tech_stack",
-              )}
-            />
-
-            <Info
-              label="Integration"
+              label="Integration method"
               value={value(
                 sourceSystem,
                 "integration_method",
               )}
             />
-
-            <Info
-              label="Owning function"
-              value={value(
-                sourceSystem,
-                "owning_function",
-              )}
-            />
-
-            <Info
-              label="Annual run cost"
-              value={
-                sourceSystem.annual_run_cost ==
-                null
-                  ? "—"
-                  : `$${Number(
-                      sourceSystem.annual_run_cost,
-                    ).toLocaleString()}`
-              }
-            />
-
           </div>
-
         </section>
+      </div>
 
-      )}
-
-
+      {/* TIMELINE */}
       <section className="rounded-xl border bg-white p-6 shadow-sm">
-
-        <div className="flex items-center gap-2">
-
-          <Clock3 className="h-5 w-5 text-slate-600" />
-
-          <h2 className="font-semibold text-slate-900">
-            Case history
-          </h2>
-
-        </div>
-
+        <Section
+          title="Case timeline"
+          description="Prototype operational workflow view."
+        />
 
         <div className="mt-6">
-
           <CaseTimeline />
-
         </div>
-
       </section>
 
+      {/* AI ASSISTANT */}
+      <section className="overflow-hidden rounded-xl border border-blue-200 bg-white shadow-sm">
+        <div className="border-b border-blue-100 bg-blue-50/50 p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+              <Bot className="h-5 w-5 text-blue-700" />
+            </div>
+
+            <div>
+              <h2 className="font-semibold text-slate-900">
+                AI triage assistant
+              </h2>
+
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Enter synthetic/demo complaint text. The local
+                Northwind CSV context is not sent to the LLM.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="rounded-xl border bg-slate-50 p-4">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+              <MessageSquare className="h-4 w-4" />
+              Agent input
+            </div>
+
+            <textarea
+              value={complaintText}
+              onChange={(event) =>
+                setComplaintText(
+                  event.target.value,
+                )
+              }
+              placeholder="Example: My bill is much higher than usual and I believe the meter reading is incorrect..."
+              className="mt-3 min-h-32 w-full resize-y rounded-lg border bg-white p-4 text-sm leading-6 outline-none focus:ring-2 focus:ring-blue-100"
+            />
+
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-slate-400">
+                Only this text is sent to the AI endpoint.
+              </p>
+
+              <button
+                type="button"
+                disabled={analyzing}
+                onClick={() => void runAI()}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send className="h-4 w-4" />
+
+                {analyzing
+                  ? "Analyzing..."
+                  : "Run AI analysis"}
+              </button>
+            </div>
+          </div>
+
+          {analysis && (
+            <div className="mt-6 space-y-5">
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div className="rounded-xl border bg-slate-50 p-5">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-blue-600" />
+
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Classification
+                    </p>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <Info
+                      label="Category"
+                      value={analysis.category}
+                    />
+
+                    <Info
+                      label="Priority"
+                      value={analysis.priority}
+                    />
+
+                    <Info
+                      label="Severity"
+                      value={analysis.severity}
+                    />
+
+                    <Info
+                      label="SLA risk"
+                      value={`${Math.round(
+                        analysis.sla_risk * 100,
+                      )}%`}
+                    />
+
+                    <Info
+                      label="Confidence"
+                      value={`${Math.round(
+                        analysis.confidence * 100,
+                      )}%`}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border p-5">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-amber-600" />
+
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Recommended action
+                    </p>
+                  </div>
+
+                  <p className="mt-4 text-sm leading-6 text-slate-700">
+                    {analysis.recommendation ??
+                      "No recommendation returned."}
+                  </p>
+
+                  <div className="mt-5 rounded-lg bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Root cause
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-700">
+                      {analysis.root_cause ??
+                        "No root cause identified."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div className="rounded-xl border bg-slate-900 p-5 text-white">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-slate-300" />
+
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-300">
+                      Suggested customer response
+                    </p>
+                  </div>
+
+                  <p className="mt-4 text-sm leading-6 text-slate-200">
+                    {analysis.response ??
+                      "No customer response returned."}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                    Explanation
+                  </p>
+
+                  <div className="mt-4 space-y-3">
+                    {analysis.explanation.length > 0 ? (
+                      analysis.explanation.map(
+                        (item, index) => (
+                          <div
+                            key={`${index}-${item}`}
+                            className="flex gap-3"
+                          >
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+
+                            <p className="text-sm leading-6 text-slate-600">
+                              {item}
+                            </p>
+                          </div>
+                        ),
+                      )
+                    ) : (
+                      <p className="text-sm text-slate-500">
+                        No explanation returned.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   )
 }
@@ -940,15 +706,10 @@ function Metric({
   value: string
   danger?: boolean
 }) {
-
   return (
-
     <div className="rounded-xl border bg-white p-5 shadow-sm">
-
       <div className="flex items-start justify-between">
-
         <div>
-
           <p className="text-sm text-slate-500">
             {title}
           </p>
@@ -962,9 +723,7 @@ function Metric({
           >
             {display}
           </p>
-
         </div>
-
 
         <Icon
           className={`h-5 w-5 ${
@@ -973,9 +732,7 @@ function Metric({
               : "text-slate-500"
           }`}
         />
-
       </div>
-
     </div>
   )
 }
@@ -983,16 +740,23 @@ function Metric({
 
 function Section({
   title,
+  description,
 }: {
   title: string
+  description?: string
 }) {
-
   return (
+    <div>
+      <h2 className="font-semibold text-slate-900">
+        {title}
+      </h2>
 
-    <h2 className="font-semibold text-slate-900">
-      {title}
-    </h2>
-
+      {description && (
+        <p className="mt-1 text-sm text-slate-500">
+          {description}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -1004,11 +768,8 @@ function Info({
   label: string
   value: string
 }) {
-
   return (
-
     <div className="rounded-lg border bg-slate-50 p-3">
-
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
         {label}
       </p>
@@ -1016,25 +777,72 @@ function Info({
       <p className="mt-1 break-words text-sm font-semibold text-slate-900">
         {display}
       </p>
-
     </div>
-
   )
 }
 
 
-function Badge({
-  value: display,
+function Tag({
+  icon,
+  text,
 }: {
-  value: string
+  icon: React.ReactNode
+  text: string
 }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+      {icon}
+      {text}
+    </span>
+  )
+}
+
+
+function PriorityBadge({
+  priority,
+}: {
+  priority: string
+}) {
+  const styles: Record<string, string> = {
+    P1: "bg-red-100 text-red-700",
+    P2: "bg-orange-100 text-orange-700",
+    P3: "bg-slate-100 text-slate-700",
+  }
 
   return (
-
-    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-      {display}
+    <span
+      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+        styles[priority] ??
+        "bg-slate-100 text-slate-700"
+      }`}
+    >
+      {priority}
     </span>
+  )
+}
 
+
+function StatusBadge({
+  status,
+}: {
+  status: string
+}) {
+  const styles: Record<string, string> = {
+    Open: "bg-blue-100 text-blue-700",
+    Closed: "bg-emerald-100 text-emerald-700",
+    "Closed - reopened":
+      "bg-amber-100 text-amber-700",
+  }
+
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+        styles[status] ??
+        "bg-slate-100 text-slate-700"
+      }`}
+    >
+      {status}
+    </span>
   )
 }
 

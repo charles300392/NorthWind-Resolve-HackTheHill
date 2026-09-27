@@ -227,3 +227,19 @@ export function getCustomers(
     `/api/customers${suffix}`,
   )
 }
+
+/* =========================
+   EXTENDED ANALYTICS
+========================= */
+
+export function getUnitCosts() {
+  return request<Record<string, number>>(
+    "/api/analytics/unit-costs",
+  )
+}
+
+export function getAIPilotSummary() {
+  return request<Record<string, number | string>>(
+    "/api/analytics/ai-pilot",
+  )
+}

@@ -4,8 +4,13 @@ import {
   LayoutDashboard,
   Settings,
   Users,
+  WalletCards,
 } from "lucide-react"
-import { NavLink } from "react-router-dom"
+
+import {
+  NavLink,
+} from "react-router-dom"
+
 
 const navigation = [
   {
@@ -29,53 +34,61 @@ const navigation = [
     icon: BarChart3,
   },
   {
+    name: "Value Case",
+    path: "/value-case",
+    icon: WalletCards,
+  },
+  {
     name: "Settings",
     path: "/settings",
     icon: Settings,
   },
 ]
 
+
 function Sidebar() {
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-white">
-      <div className="flex h-16 items-center border-b px-6">
-        <div>
-          <h1 className="text-lg font-bold text-slate-900">
-            Northwind
-          </h1>
+    <aside className="flex w-[230px] shrink-0 flex-col border-r bg-white">
+      <div className="border-b px-5 py-4">
+        <p className="text-lg font-bold text-slate-900">
+          Northwind
+        </p>
 
-          <p className="text-xs text-slate-500">
-            Utilities
-          </p>
-        </div>
+        <p className="text-xs text-slate-500">
+          Utilities
+        </p>
       </div>
 
-      <nav className="flex-1 space-y-1 p-4">
-        {navigation.map((item) => {
-          const Icon = item.icon
-
-          return (
+      <nav className="flex-1 space-y-1 p-3">
+        {navigation.map(
+          ({
+            name,
+            path,
+            icon: Icon,
+          }) => (
             <NavLink
-              key={item.name}
-              to={item.path}
+              key={path}
+              to={path}
               className={({ isActive }) =>
-                `flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                [
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
                   isActive
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                }`
+                    ? "bg-slate-900 text-white shadow-sm"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                ].join(" ")
               }
             >
               <Icon className="h-4 w-4" />
-              {item.name}
+
+              <span>{name}</span>
             </NavLink>
-          )
-        })}
+          ),
+        )}
       </nav>
 
       <div className="border-t p-4">
         <div className="rounded-lg bg-slate-50 p-3">
-          <p className="text-sm font-medium text-slate-900">
+          <p className="text-xs font-semibold text-slate-700">
             Agent Workspace
           </p>
 

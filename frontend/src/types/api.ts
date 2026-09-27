@@ -37,6 +37,7 @@ export interface ComplaintListResponse {
 export interface ComplaintFilters {
   limit?: number
   offset?: number
+  search?: string
   region?: string
   category?: string
   priority?: string
