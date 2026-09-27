@@ -6,6 +6,7 @@ import Complaints from "./pages/Complaints"
 import Customers from "./pages/Customers"
 import Dashboard from "./pages/Dashboard"
 import Settings from "./pages/Settings"
+import NewComplaint from "./pages/NewComplaint"
 import ValueCase from "./pages/ValueCase"
 
 import DashboardLayout from "./components/layout/DashboardLayout"
@@ -20,6 +21,11 @@ function App() {
           <Route
             path="/complaints"
             element={<Complaints />}
+          />
+
+          <Route
+            path="/complaints/new"
+            element={<NewComplaint />}
           />
 
           <Route

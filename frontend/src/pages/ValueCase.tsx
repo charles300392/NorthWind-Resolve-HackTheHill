@@ -1,3 +1,4 @@
+import type { JsonRecord } from "../types/api"
 import {
   AlertTriangle,
   ArrowDown,
@@ -36,10 +37,14 @@ function ValueCase() {
     useState<Record<string, number>>({})
 
   const [pilot, setPilot] =
-    useState<Record<string, number | string>>({})
+    useState<Record<string, string | number>>({})
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+  const [loading, setLoading] =
+    useState(true)
+
+  const [error, setError] =
+    useState("")
+
 
   useEffect(() => {
     async function load() {
@@ -58,8 +63,62 @@ function ValueCase() {
         ])
 
         setData(summary)
-        setUnitCosts(costs)
-        setPilot(pilotSummary)
+
+        /*
+         * The API returns unit costs as an array of records.
+         * ValueCase uses the cost-item name as the lookup key,
+         * so convert the API response into:
+         *
+         * {
+         *   "Inbound call handled by agent": 7.4,
+         *   ...
+         * }
+         */
+
+        const costMap: Record<string, number> = {}
+
+        for (const row of costs) {
+          const name =
+            String(
+              row["cost_item"] ??
+              row["item"] ??
+              row["name"] ??
+              row["cost_name"] ??
+              "",
+            )
+
+          const value =
+            Number(
+              row["cost"] ??
+              row["unit_cost"] ??
+              row["value"] ??
+              row["amount"] ??
+              0,
+            )
+
+          if (name) {
+            costMap[name] = value
+          }
+        }
+
+        setUnitCosts(costMap)
+
+        /*
+         * The AI pilot endpoint returns an array.
+         * The Value Case displays one historical pilot summary,
+         * so use the first record returned by the API.
+         */
+
+        const pilotData: JsonRecord =
+          pilotSummary[0] ?? {}
+
+        setPilot(
+          pilotData as Record<
+            string,
+            string | number
+          >,
+        )
+
       } catch (err) {
         setError(
           err instanceof Error
@@ -74,98 +133,118 @@ function ValueCase() {
     void load()
   }, [])
 
-  const overall = data?.overall ?? {}
 
-  const monthly = data?.monthly ?? []
+  const overall =
+    data?.overall ?? {}
+
+  const monthly =
+    data?.monthly ?? []
 
   const latest =
     monthly[monthly.length - 1] ?? {}
 
-  const metrics = useMemo(() => {
-    const totalComplaints =
-      Number(
-        overall.total_complaints ?? 0,
-      )
 
-    const averageDays =
-      Number(
-        overall.average_days_to_close ?? 0,
-      )
+  const metrics =
+    useMemo(() => {
+      const totalComplaints =
+        Number(
+          overall.total_complaints ?? 0,
+        )
 
-    const breachRate =
-      Number(
-        overall.sla_breach_rate ?? 0,
-      )
+      const averageDays =
+        Number(
+          overall.average_days_to_close ?? 0,
+        )
 
-    const openBacklog =
-      Number(
-        overall.open_complaints ?? 0,
-      )
+      const breachRate =
+        Number(
+          overall.sla_breach_rate ?? 0,
+        )
 
-    const inboundCalls =
-      Number(
-        latest.inbound_calls ?? 0,
-      )
+      const openBacklog =
+        Number(
+          overall.open_complaints ?? 0,
+        )
 
-    const fcr =
-      Number(
-        latest.first_contact_resolution_rate ?? 0,
-      )
+      const inboundCalls =
+        Number(
+          latest.inbound_calls ?? 0,
+        )
 
-    const costToServe =
-      Number(
-        latest.cost_to_serve_per_account ?? 0,
-      )
+      const fcr =
+        Number(
+          latest.first_contact_resolution_rate ?? 0,
+        )
 
-    return {
-      totalComplaints,
-      averageDays,
-      breachRate,
-      openBacklog,
-      inboundCalls,
-      fcr,
-      costToServe,
-    }
-  }, [overall, latest])
+      const costToServe =
+        Number(
+          latest.cost_to_serve_per_account ?? 0,
+        )
+
+      return {
+        totalComplaints,
+        averageDays,
+        breachRate,
+        openBacklog,
+        inboundCalls,
+        fcr,
+        costToServe,
+      }
+    }, [overall, latest])
+
 
   const callCost =
-    unitCosts["Inbound call handled by agent"] ?? 7.4
+    unitCosts[
+      "Inbound call handled by agent"
+    ] ?? 7.4
+
 
   const complaintCost =
     unitCosts[
       "Complaint handled end to end (average)"
     ] ?? 68
 
+
   const transferredComplaintCost =
     unitCosts[
       "Complaint handled end to end (transferred between systems)"
     ] ?? 121
+
 
   const pilotCost =
     unitCosts[
       "AskNorthwind assistant pilot"
     ] ?? 640000
 
+
   const monitoringPenalty =
     unitCosts[
       "Regulator penalty, enhanced monitoring"
     ] ?? 2400000
+
 
   const annualCallCost =
     metrics.inboundCalls *
     12 *
     callCost
 
+
   const annualComplaintCost =
     metrics.totalComplaints *
     complaintCost
+
 
   /*
    * Illustrative levers from the business-case UI.
    * These are assumptions, not observed Northwind outcomes.
    */
-  const fcrImprovement = 0.10
-  const resolutionReduction = 0.25
+
+  const fcrImprovement =
+    0.10
+
+  const resolutionReduction =
+    0.25
+
 
   const estimatedAnnualBenefit =
     annualCallCost *
@@ -175,8 +254,10 @@ function ValueCase() {
       resolutionReduction *
       0.12
 
+
   const implementationCost =
     pilotCost
+
 
   const paybackMonths =
     estimatedAnnualBenefit > 0
@@ -184,6 +265,7 @@ function ValueCase() {
         estimatedAnnualBenefit *
         12
       : 0
+
 
   if (loading) {
     return (
@@ -194,6 +276,7 @@ function ValueCase() {
       </div>
     )
   }
+
 
   return (
     <div className="space-y-6">
@@ -213,13 +296,16 @@ function ValueCase() {
         </p>
       </div>
 
+
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           Backend error: {error}
         </div>
       )}
 
+
       {/* CURRENT PRESSURE */}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ValueCard
           title="Complaint workload"
@@ -256,7 +342,9 @@ function ValueCase() {
         />
       </div>
 
+
       {/* COST REFERENCES */}
+
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -299,7 +387,9 @@ function ValueCase() {
         </div>
       </section>
 
+
       {/* BENEFIT LEVERS */}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2">
@@ -336,6 +426,7 @@ function ValueCase() {
             />
           </div>
         </section>
+
 
         <section className="rounded-xl bg-slate-900 p-6 text-white shadow-sm">
           <p className="text-sm font-medium text-slate-300">
@@ -376,7 +467,9 @@ function ValueCase() {
         </section>
       </div>
 
+
       {/* PILOT + RISK REFERENCE */}
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2">
@@ -426,6 +519,7 @@ function ValueCase() {
           </div>
         </section>
 
+
         <section className="rounded-xl border bg-white p-6 shadow-sm">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 text-amber-600" />
@@ -446,7 +540,9 @@ function ValueCase() {
         </section>
       </div>
 
+
       {/* ASSUMPTIONS */}
+
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-slate-500" />
@@ -535,7 +631,9 @@ function ValueCase() {
         </div>
       </section>
 
+
       {/* RISKS */}
+
       <section className="rounded-xl border border-amber-200 bg-amber-50 p-6">
         <div className="flex items-start gap-4">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
@@ -570,7 +668,9 @@ function ValueCase() {
         </div>
       </section>
 
+
       {/* DECISION FRAME */}
+
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="font-semibold text-slate-900">
           Validation frame
@@ -597,6 +697,7 @@ function ValueCase() {
           />
         </div>
       </section>
+
 
       <div className="flex items-center gap-3 rounded-xl border bg-slate-50 p-5">
         <ArrowDown className="h-5 w-5 text-slate-500" />

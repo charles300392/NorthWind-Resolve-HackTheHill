@@ -24,6 +24,18 @@ export interface Complaint {
   bill_correction_value: number | null
 
   account_id: string
+
+  complaint_text?: string
+  triage_priority?: string
+  severity?: string
+  triage_score?: number
+  queue?: string
+  sla_risk?: number
+  root_cause?: string | null
+  recommendation?: string | null
+  response?: string | null
+  confidence?: number
+  explanation?: string[]
 }
 
 export interface ComplaintListResponse {
@@ -37,11 +49,11 @@ export interface ComplaintListResponse {
 export interface ComplaintFilters {
   limit?: number
   offset?: number
-  search?: string
   region?: string
   category?: string
   priority?: string
   status?: string
+  search?: string
 }
 
 export interface DashboardSummary {
@@ -91,6 +103,26 @@ export interface AIAnalysis {
   recommendation: string | null
   response: string | null
 
+  confidence: number
+  explanation: string[]
+}
+
+export interface NewComplaintRequest {
+  complaint_text: string
+  account_id?: string
+  region: string
+  channel: string
+}
+
+export interface NewComplaintResponse extends Complaint {
+  triage_priority: string
+  severity: string
+  triage_score: number
+  queue: string
+  sla_risk: number
+  root_cause: string | null
+  recommendation: string | null
+  response: string | null
   confidence: number
   explanation: string[]
 }

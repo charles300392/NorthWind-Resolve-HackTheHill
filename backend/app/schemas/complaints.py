@@ -10,33 +10,23 @@ class ComplaintRequest(BaseModel):
     )
 
     customer_context: Optional[dict] = None
-
     case_context: Optional[dict] = None
 
 
 class ComplaintResponse(BaseModel):
     category: str
-
     priority: str
-
     severity: str
-
-    sla_risk: float = Field(
-        ge=0.0,
-        le=1.0,
-    )
-
+    sla_risk: float = Field(ge=0.0, le=1.0)
     root_cause: Optional[str] = None
-
     recommendation: Optional[str] = None
-
     response: Optional[str] = None
+    confidence: float = Field(ge=0.0, le=1.0)
+    explanation: list[str] = Field(default_factory=list)
 
-    confidence: float = Field(
-        ge=0.0,
-        le=1.0,
-    )
 
-    explanation: list[str] = Field(
-        default_factory=list,
-    )
+class NewComplaintRequest(BaseModel):
+    complaint_text: str = Field(min_length=10, max_length=5000)
+    account_id: Optional[str] = None
+    region: str = Field(min_length=1)
+    channel: str = Field(default="Web form", min_length=1)

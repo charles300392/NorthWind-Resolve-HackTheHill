@@ -1,12 +1,15 @@
 import type {
   AIAnalysis,
   AnalyzeComplaintRequest,
+  NewComplaintRequest,
+  NewComplaintResponse,
   Complaint,
   ComplaintContext,
   ComplaintFilters,
   ComplaintListResponse,
   CustomerListResponse,
   DashboardSummary,
+  JsonRecord,
 } from "../types/api"
 
 const API_BASE_URL =
@@ -84,6 +87,19 @@ export function getDashboardSummary() {
 /* =========================
    COMPLAINTS
 ========================= */
+
+export function createComplaint(
+  input: NewComplaintRequest,
+) {
+  return request<NewComplaintResponse>(
+    "/api/complaints",
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  )
+}
+
 
 export function getComplaints(
   filters: ComplaintFilters = {},
@@ -226,20 +242,17 @@ export function getCustomers(
   return request<CustomerListResponse>(
     `/api/customers${suffix}`,
   )
-}
-
-/* =========================
-   EXTENDED ANALYTICS
-========================= */
-
-export function getUnitCosts() {
-  return request<Record<string, number>>(
-    "/api/analytics/unit-costs",
-  )
+  
 }
 
 export function getAIPilotSummary() {
-  return request<Record<string, number | string>>(
+  return request<JsonRecord[]>(
     "/api/analytics/ai-pilot",
+  )
+}
+
+export function getUnitCosts() {
+  return request<JsonRecord[]>(
+    "/api/analytics/unit-costs",
   )
 }
